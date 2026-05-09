@@ -1,0 +1,56 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build artifacts
+build/
+dist/
+*.exe
+*.dmg
+*.zip
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Database
+public/database/ca_system.db
+public/database/ca_system.backup.db
+*.backup.db
+*.db-journal
+
+# Uploads
+public/uploads/*
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Cache
+.cache/
+.eslintcache
+.node-gyp/
+
+# Logs
+logs/
+*.log
+
+# OS
+Thumbs.db
+.DS_Store
+*.app/
+
+# Testing
+coverage/
+.nyc_output/
+
+# Misc
+.prettierignore
+*.pem

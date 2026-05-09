@@ -1,0 +1,54 @@
+{
+  "appId": "com.ca-system.app",
+  "productName": "CA Management System",
+  "directories": {
+    "buildResources": "public",
+    "output": "dist"
+  },
+  "files": [
+    "build/**/*",
+    "public/electron.js",
+    "public/preload.js",
+    "public/server.js",
+    "public/database/**/*",
+    "public/scripts/**/*",
+    "node_modules/**/*",
+    "package.json"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      },
+      {
+        "target": "portable",
+        "arch": ["x64"]
+      }
+    ]
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "CA Management System"
+  },
+  "portable": {
+    "artifactName": "${productName}-${version}.exe"
+  },
+  "mac": {
+    "target": [
+      "dmg",
+      "zip"
+    ],
+    "icon": "public/icon.icns"
+  },
+  "linux": {
+    "target": [
+      "AppImage",
+      "deb"
+    ],
+    "icon": "public/icon.png"
+  }
+}

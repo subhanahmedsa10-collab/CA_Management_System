@@ -1,0 +1,68 @@
+{
+  "name": "ca-management-system",
+  "version": "1.0.0",
+  "description": "Professional CA Firm Management System",
+  "main": "public/electron.js",
+  "homepage": "./",
+  "author": "CA Management System",
+  "license": "UNLICENSED",
+  "private": true,
+  "dependencies": {
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.14.0",
+    "@mui/material": "^5.14.0",
+    "@reduxjs/toolkit": "^1.9.5",
+    "axios": "^1.4.0",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "electron-is-dev": "^2.0.0",
+    "electron-log": "^4.4.8",
+    "exceljs": "^4.3.0",
+    "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.0",
+    "multer": "^1.4.5-lts.1",
+    "pdfkit": "^0.13.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.1.1",
+    "react-router-dom": "^6.8.0",
+    "sqlite3": "^5.1.7"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.0",
+    "cross-env": "^7.0.3",
+    "electron": "^25.0.0",
+    "electron-builder": "^24.6.2",
+    "react-scripts": "5.0.1",
+    "wait-on": "^7.0.1"
+  },
+  "scripts": {
+    "start": "cross-env BROWSER=none react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "dev": "concurrently -k \"npm run server\" \"npm start\" \"wait-on http://localhost:3000 && electron public/electron.js\"",
+    "server": "node public/server.js",
+    "electron": "electron public/electron.js",
+    "pack": "electron-builder --dir",
+    "dist": "npm run build && electron-builder",
+    "init-db": "node public/scripts/initDatabase.js",
+    "backup-db": "node public/scripts/backupDatabase.js"
+  },
+  "eslintConfig": {
+    "extends": "react-app"
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ name: Build Electron App
 on:
   push:
     branches: [ main ]
-
+CI: 'false'
 jobs:
   build:
     runs-on: windows-latest

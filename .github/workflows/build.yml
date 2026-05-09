@@ -1,0 +1,37 @@
+name: Build Electron App
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js 18
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+
+    - name: Install dependencies
+      run: npm install
+      env:
+        npm_config_msvs_version: '2022'
+
+    - name: Build exe
+      run: npm run dist
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        npm_config_msvs_version: '2022'
+        CI: 'false'
+
+    - name: Upload exe
+      uses: actions/upload-artifact@v4
+      with:
+        name: CA-Management-System-exe
+        path: dist/*.exe
+        retention-days: 30

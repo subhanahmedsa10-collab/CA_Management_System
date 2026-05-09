@@ -2,6 +2,7 @@
   "appId": "com.ca-system.app",
   "productName": "CA Management System",
   "npmRebuild": false,
+  "electronVersion": "25.0.0",
   "directories": {
     "buildResources": "public",
     "output": "dist"

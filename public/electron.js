@@ -1,5 +1,6 @@
-const { app, BrowserWindow, Menu } = require('electron');
+const { app, BrowserWindow, Menu, dialog } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { fork } = require('child_process');
 
 const isDev = !app.isPackaged;
@@ -7,16 +8,31 @@ const isDev = !app.isPackaged;
 let mainWindow;
 let serverProcess;
 
+// Log file in userData folder so users can send it to us
+const userDataDir = app.getPath('userData');
+if (!fs.existsSync(userDataDir)) {
+  fs.mkdirSync(userDataDir, { recursive: true });
+}
+const logPath = path.join(userDataDir, 'app.log');
+
+function logToFile(line) {
+  try {
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] ${line}\n`);
+  } catch (_) {}
+}
+
 function startBackendServer() {
   if (isDev) {
     // In dev mode, server is started by `npm run dev` via concurrently
     return;
   }
 
+  logToFile('Starting backend server...');
+
   // In production, fork the backend server as a child process
   const serverPath = path.join(__dirname, 'server.js');
   serverProcess = fork(serverPath, [], {
-    silent: false,
+    silent: true, // capture stdout/stderr
     env: {
       ...process.env,
       NODE_ENV: 'production',
@@ -25,8 +41,28 @@ function startBackendServer() {
     },
   });
 
+  if (serverProcess.stdout) {
+    serverProcess.stdout.on('data', (data) => {
+      const txt = data.toString();
+      console.log('[server]', txt);
+      logToFile('[server] ' + txt.trim());
+    });
+  }
+  if (serverProcess.stderr) {
+    serverProcess.stderr.on('data', (data) => {
+      const txt = data.toString();
+      console.error('[server-err]', txt);
+      logToFile('[server-err] ' + txt.trim());
+    });
+  }
+
   serverProcess.on('error', (err) => {
     console.error('Backend server error:', err);
+    logToFile('[server-fatal] ' + err.stack);
+  });
+
+  serverProcess.on('exit', (code, signal) => {
+    logToFile(`[server-exit] code=${code} signal=${signal}`);
   });
 }
 
@@ -54,9 +90,8 @@ function createWindow() {
     mainWindow.show();
   });
 
-  if (isDev) {
-    mainWindow.webContents.openDevTools();
-  }
+  // Open DevTools in both dev and prod for now (debugging packaged app)
+  mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;
@@ -66,10 +101,18 @@ function createWindow() {
 }
 
 function createMenu() {
+  const { shell } = require('electron');
   const template = [
     {
       label: 'File',
-      submenu: [{ role: 'quit' }],
+      submenu: [
+        {
+          label: 'Open Log Folder',
+          click: () => shell.openPath(userDataDir),
+        },
+        { type: 'separator' },
+        { role: 'quit' },
+      ],
     },
     {
       label: 'Edit',

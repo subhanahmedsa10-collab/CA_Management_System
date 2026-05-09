@@ -4,7 +4,7 @@ const path = require('path');
 const fs = require('fs');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const sqlite3 = require('sqlite3').verbose();
+const Database = require('better-sqlite3');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 const multer = require('multer');
@@ -35,70 +35,65 @@ const upload = multer({ storage });
 
 // Database initialization
 const dbPath = path.join(__dirname, './database/ca_system.db');
-const rawDb = new sqlite3.Database(dbPath, (err) => {
-  if (err) {
-    console.error('Database connection error:', err);
-  } else {
-    console.log('✓ Connected to SQLite database');
-  }
-});
+const rawDb = new Database(dbPath);
+console.log('✓ Connected to SQLite database');
 
 // Ensure firm_profile table exists on existing databases (idempotent)
-rawDb.serialize(() => {
-  rawDb.run(`
-    CREATE TABLE IF NOT EXISTS firm_profile (
-      id INTEGER PRIMARY KEY CHECK (id = 1),
-      firm_name TEXT,
-      proprietor_name TEXT,
-      membership_no TEXT,
-      address TEXT,
-      city TEXT,
-      state TEXT,
-      postal_code TEXT,
-      phone TEXT,
-      email TEXT,
-      website TEXT,
-      gstin TEXT,
-      pan TEXT,
-      bank_name TEXT,
-      bank_account TEXT,
-      bank_ifsc TEXT,
-      bank_branch TEXT,
-      invoice_prefix TEXT DEFAULT 'INV',
-      invoice_footer TEXT,
-      default_gst_percentage DECIMAL(5,2) DEFAULT 18,
-      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
-    )
-  `);
-  rawDb.run(`INSERT OR IGNORE INTO firm_profile (id, firm_name) VALUES (1, 'Your CA Firm Name')`);
-});
+rawDb.exec(`
+  CREATE TABLE IF NOT EXISTS firm_profile (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    firm_name TEXT,
+    proprietor_name TEXT,
+    membership_no TEXT,
+    address TEXT,
+    city TEXT,
+    state TEXT,
+    postal_code TEXT,
+    phone TEXT,
+    email TEXT,
+    website TEXT,
+    gstin TEXT,
+    pan TEXT,
+    bank_name TEXT,
+    bank_account TEXT,
+    bank_ifsc TEXT,
+    bank_branch TEXT,
+    invoice_prefix TEXT DEFAULT 'INV',
+    invoice_footer TEXT,
+    default_gst_percentage DECIMAL(5,2) DEFAULT 18,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+  )
+`);
+rawDb.prepare(`INSERT OR IGNORE INTO firm_profile (id, firm_name) VALUES (1, 'Your CA Firm Name')`).run();
 
-// Custom promise wrappers — db.run must capture `this.lastID` and `this.changes`,
-// which util.promisify cannot do. Use these instead of util.promisify.
+// better-sqlite3 wrapper — keeps same async interface as before
 const db = {
   run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      rawDb.run(sql, params, function (err) {
-        if (err) reject(err);
-        else resolve({ lastID: this.lastID, changes: this.changes });
-      });
-    });
+    try {
+      const stmt = rawDb.prepare(sql);
+      const result = stmt.run(params);
+      return Promise.resolve({ lastID: result.lastInsertRowid, changes: result.changes });
+    } catch (err) {
+      return Promise.reject(err);
+    }
   },
   get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      rawDb.get(sql, params, (err, row) => {
-        if (err) reject(err);
-        else resolve(row);
-      });
-    });
+    try {
+      const stmt = rawDb.prepare(sql);
+      const row = stmt.get(params);
+      return Promise.resolve(row);
+    } catch (err) {
+      return Promise.reject(err);
+    }
   },
   all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      rawDb.all(sql, params, (err, rows) => {
-        if (err) reject(err);
-        else resolve(rows);
-      });
-    });
+    try {
+      const stmt = rawDb.prepare(sql);
+      const rows = stmt.all(params);
+      return Promise.resolve(rows);
+    } catch (err) {
+      return Promise.reject(err);
+    }
   },
 };
 

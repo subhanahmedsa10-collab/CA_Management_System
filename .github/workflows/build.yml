@@ -23,10 +23,10 @@ jobs:
     - name: Install dependencies
       run: npm install
 
-    - name: Rebuild sqlite3 for Electron
+    - name: Rebuild better-sqlite3 for Electron
       run: |
         npm install --save-dev @electron/rebuild
-        npx electron-rebuild -f -w sqlite3 --version 25.0.0
+        npx electron-rebuild -f -w better-sqlite3 --version 25.0.0
       env:
         npm_config_msvs_version: '2022'
 

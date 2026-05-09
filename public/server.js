@@ -34,9 +34,70 @@ const storage = multer.diskStorage({
 const upload = multer({ storage });
 
 // Database initialization
-const dbPath = path.join(__dirname, './database/ca_system.db');
+// In production (packaged), __dirname is inside app.asar (read-only).
+// We need to use a writable user-data folder for the actual database file.
+const isProd = !!process.env.USER_DATA_PATH;
+
+let dbPath;
+let dbDir;
+
+if (isProd) {
+  dbDir = path.join(process.env.USER_DATA_PATH, 'database');
+  dbPath = path.join(dbDir, 'ca_system.db');
+} else {
+  dbDir = path.join(__dirname, './database');
+  dbPath = path.join(dbDir, 'ca_system.db');
+}
+
+if (!fs.existsSync(dbDir)) {
+  fs.mkdirSync(dbDir, { recursive: true });
+}
+
+console.log('Database path:', dbPath);
 const rawDb = new Database(dbPath);
 console.log('✓ Connected to SQLite database');
+
+// Run schema (idempotent: every CREATE TABLE has IF NOT EXISTS)
+try {
+  // Schema may live next to server.js (dev) or inside resources (prod)
+  const schemaCandidates = [
+    path.join(__dirname, './database/schema.sql'),
+    path.join(__dirname, '../public/database/schema.sql'),
+  ];
+  let schemaSql = null;
+  for (const p of schemaCandidates) {
+    if (fs.existsSync(p)) {
+      schemaSql = fs.readFileSync(p, 'utf-8');
+      break;
+    }
+  }
+  if (schemaSql) {
+    rawDb.exec(schemaSql);
+    console.log('✓ Schema applied');
+  } else {
+    console.warn('⚠ schema.sql not found — assuming tables already exist');
+  }
+} catch (err) {
+  console.error('Schema error:', err);
+}
+
+// Seed default admin/staff users if users table is empty
+try {
+  const userCount = rawDb.prepare('SELECT COUNT(*) AS c FROM users').get().c;
+  if (userCount === 0) {
+    const adminHash = bcrypt.hashSync('admin123', 10);
+    const staffHash = bcrypt.hashSync('staff123', 10);
+    const insert = rawDb.prepare(
+      `INSERT INTO users (username, password, email, full_name, role, is_active)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    );
+    insert.run('admin', adminHash, 'admin@ca-system.local', 'System Administrator', 'admin', 1);
+    insert.run('staff', staffHash, 'staff@ca-system.local', 'Staff Member', 'staff', 1);
+    console.log('✓ Default users seeded (admin/admin123, staff/staff123)');
+  }
+} catch (err) {
+  console.error('User seed error:', err);
+}
 
 // Ensure firm_profile table exists on existing databases (idempotent)
 rawDb.exec(`

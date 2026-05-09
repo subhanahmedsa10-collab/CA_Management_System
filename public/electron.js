@@ -17,7 +17,12 @@ function startBackendServer() {
   const serverPath = path.join(__dirname, 'server.js');
   serverProcess = fork(serverPath, [], {
     silent: false,
-    env: { ...process.env, NODE_ENV: 'production' },
+    env: {
+      ...process.env,
+      NODE_ENV: 'production',
+      USER_DATA_PATH: app.getPath('userData'),
+      RESOURCES_PATH: process.resourcesPath,
+    },
   });
 
   serverProcess.on('error', (err) => {

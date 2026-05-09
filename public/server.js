@@ -20,7 +20,9 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Multer setup for file uploads
-const uploadsDir = path.join(__dirname, '../uploads');
+// In production (packaged), __dirname is inside app.asar (read-only) — use userData
+const uploadsBase = process.env.USER_DATA_PATH || path.join(__dirname, '..');
+const uploadsDir = path.join(uploadsBase, 'uploads');
 if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
